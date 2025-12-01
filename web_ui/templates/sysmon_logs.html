@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sysmon Event Logs</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 Sysmon Event Logs</h1>
+            <p>Real-time monitoring of specific Sysmon events</p>
+            
+            <div class="controls">
+                <button id="startBtn" class="btn btn-success">Start Monitoring</button>
+                <button id="stopBtn" class="btn btn-danger" disabled>Stop Monitoring</button>
+                <button id="clearBtn" class="btn btn-warning">Clear Events</button>
+                <span class="status" id="status">Stopped</span>
+            </div>
+        </div>
+        
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-value" id="eventCount">0</div>
+                <div class="stat-label">Total Events</div>
+            </div>
+            <div class="stat-item info">
+                <div class="stat-value" id="processCount">0</div>
+                <div class="stat-label">Process Create (1)</div>
+            </div>
+            <div class="stat-item warning">
+                <div class="stat-value" id="networkCount">0</div>
+                <div class="stat-label">Network Connect (3)</div>
+            </div>
+            <div class="stat-item success">
+                <div class="stat-value" id="imageCount">0</div>
+                <div class="stat-label">Image Load (7)</div>
+            </div>
+            <div class="stat-item danger">
+                <div class="stat-value" id="dnsCount">0</div>
+                <div class="stat-label">DNS Query (22)</div>
+            </div>
+        </div>
+        
+        <div class="table-container">
+            <table id="eventsTable">
+                <thead>
+                    <tr>
+                        <th>Timestamp</th>
+                        <th>Event ID</th>
+                        <th>Description</th>
+                        <th>Computer</th>
+                        <th>Process Name</th>
+                        <th>Command Line</th>
+                        <th>Network Info</th>
+                        <th>DNS Query</th>
+                        <th>File Name</th>
+                        <th>Record #</th>
+                    </tr>
+                </thead>
+                <tbody id="eventsBody">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        let isMonitoring = false;
+        let eventCounts = {total: 0, process: 0, network: 0, image: 0, dns: 0};
+        
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const statusEl = document.getElementById('status');
+        const eventsBody = document.getElementById('eventsBody');
+        
+        startBtn.addEventListener('click', startMonitoring);
+        stopBtn.addEventListener('click', stopMonitoring);
+        clearBtn.addEventListener('click', clearEvents);
+        
+        async function startMonitoring() {
+            try {
+                const response = await fetch('/api/start');
+                const data = await response.json();
+                
+                if (data.status === 'started' || data.status === 'already running') {
+                    isMonitoring = true;
+                    startBtn.disabled = true;
+                    stopBtn.disabled = false;
+                    statusEl.textContent = 'Monitoring';
+                    statusEl.className = 'status status-active';
+                    
+                    pollEvents();
+                }
+            } catch (error) {
+                console.error('Error starting monitoring:', error);
+            }
+        }
+        
+        async function stopMonitoring() {
+            try {
+                const response = await fetch('/api/stop');
+                const data = await response.json();
+                
+                isMonitoring = false;
+                startBtn.disabled = false;
+                stopBtn.disabled = true;
+                statusEl.textContent = 'Stopped';
+                statusEl.className = 'status';
+            } catch (error) {
+                console.error('Error stopping monitoring:', error);
+            }
+        }
+        
+        async function clearEvents() {
+            try {
+                await fetch('/api/clear');
+                eventsBody.innerHTML = '';
+                eventCounts = {total: 0, process: 0, network: 0, image: 0, dns: 0};
+                updateStats();
+            } catch (error) {
+                console.error('Error clearing events:', error);
+            }
+        }
+        
+        async function pollEvents() {
+            while (isMonitoring) {
+                try {
+                    const response = await fetch('/api/events');
+                    const events = await response.json();
+                    
+                    displayEvents(events);
+                    updateStats();
+                    
+                    await new Promise(resolve => setTimeout(resolve, 2000));
+                } catch (error) {
+                    console.error('Error polling events:', error);
+                    await new Promise(resolve => setTimeout(resolve, 5000));
+                }
+            }
+        }
+        
+        function displayEvents(events) {
+            eventsBody.innerHTML = '';
+            eventCounts = {total: 0, process: 0, network: 0, image: 0, dns: 0};
+            
+            events.forEach(event => {
+                if (event.error) {
+                    const row = document.createElement('tr');
+                    row.className = 'row-error';
+                    row.innerHTML = `
+                        <td colspan="10" class="error-cell">Error: ${event.error}</td>
+                    `;
+                    eventsBody.appendChild(row);
+                    return;
+                }
+                
+                eventCounts.total++;
+                
+                // Count by event type
+                switch (event.EventID) {
+                    case 1: eventCounts.process++; break;
+                    case 3: eventCounts.network++; break;
+                    case 7: eventCounts.image++; break;
+                    case 22: eventCounts.dns++; break;
+                }
+                
+                const row = document.createElement('tr');
+                
+                // Set row class based on event type
+                switch (event.EventID) {
+                    case 1: row.className = 'row-info'; break;
+                    case 3: row.className = 'row-warning'; break;
+                    case 7: row.className = 'row-success'; break;
+                    case 22: row.className = 'row-danger'; break;
+                    default: row.className = ''; break;
+                }
+                
+                // Build network info for event ID 3
+                const networkInfo = event.EventID === 3 && event.SourceIP && event.DestIP ?
+                    `${event.SourceIP} → ${event.DestIP}:${event.DestPort || '?'}` : '-';
+                
+                row.innerHTML = `
+                    <td>${new Date(event.TimeGenerated).toLocaleString()}</td>
+                    <td><span class="event-id event-id-${event.EventID}">${event.EventID}</span></td>
+                    <td>${event.EventDescription || 'Unknown'}</td>
+                    <td>${event.ComputerName}</td>
+                    <td class="process-cell" title="${event.ProcessName}">${truncateText(event.ProcessName, 20)}</td>
+                    <td class="command-cell" title="${event.CommandLine}">${truncateText(event.CommandLine, 30)}</td>
+                    <td>${networkInfo}</td>
+                    <td>${event.QueryName || '-'}</td>
+                    <td class="filename-cell" title="${event.FileName}">${truncateText(event.FileName, 20)}</td>
+                    <td>${event.RecordNumber}</td>
+                `;
+                
+                eventsBody.appendChild(row);
+            });
+        }
+        
+        function updateStats() {
+            document.getElementById('eventCount').textContent = eventCounts.total;
+            document.getElementById('processCount').textContent = eventCounts.process;
+            document.getElementById('networkCount').textContent = eventCounts.network;
+            document.getElementById('imageCount').textContent = eventCounts.image;
+            document.getElementById('dnsCount').textContent = eventCounts.dns;
+        }
+        
+        function truncateText(text, maxLength) {
+            if (!text || text === '-' || text === 'Unknown') return text;
+            return text.length > maxLength ? text.substring(0, maxLength) + '...' : text;
+        }
+    </script>
+</body>
+</html>

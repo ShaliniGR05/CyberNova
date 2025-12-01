@@ -1,0 +1,26 @@
+<Sysmon schemaversion="4.83">
+  <HashAlgorithms>*</HashAlgorithms>
+  <EventFiltering>
+    
+    <!-- Process Create (Event ID 1) -->
+    <ProcessCreate onmatch="include">
+      <Image condition="end with">.exe</Image>
+    </ProcessCreate>
+    
+    <!-- Network Connect (Event ID 3) -->
+    <NetworkConnect onmatch="include">
+      <Image condition="end with">.exe</Image>
+    </NetworkConnect>
+    
+    <!-- File Create (Event ID 11) -->
+    <FileCreate onmatch="include">
+      <Image condition="end with">.exe</Image>
+    </FileCreate>
+    
+    <!-- Registry Events (Event IDs 12, 13, 14) -->
+    <RegistryEvent onmatch="include">
+      <Image condition="end with">.exe</Image>
+    </RegistryEvent>
+  
+  </EventFiltering>
+</Sysmon>

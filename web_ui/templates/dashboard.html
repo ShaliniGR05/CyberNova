@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Security Monitoring Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+        }
+        
+        .card-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .card-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            font-size: 1.5rem;
+            color: white;
+        }
+        
+        .card-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .card-description {
+            color: #666;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+        
+        .card-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+        }
+        
+        .port-info {
+            background: #f8f9fa;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            color: #666;
+        }
+        
+        .open-btn {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .open-btn:hover {
+            background: linear-gradient(45deg, #5a6fd8, #6a4190);
+            transform: scale(1.05);
+        }
+        
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-left: 10px;
+        }
+        
+        .status-unknown { background: #6c757d; }
+        .status-online { background: #28a745; }
+        .status-offline { background: #dc3545; }
+        
+        .system-info {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            margin-top: 20px;
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        
+        .info-item {
+            text-align: center;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+        
+        .info-value {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+        
+        .info-label {
+            color: #666;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🛡️ Security Monitoring Dashboard</h1>
+            <p>Real-time monitoring and analysis of system security events</p>
+        </div>
+        
+        <div class="grid">
+            <div class="card" onclick="openMonitor('http://localhost:5001')">
+                <div class="card-header">
+                    <div class="card-icon" style="background: linear-gradient(45deg, #ff6b6b, #ffa500);">⚙️</div>
+                    <div class="card-title">Sysmon Application Monitor</div>
+                    <div class="status-indicator status-unknown" id="status-5001"></div>
+                </div>
+                <div class="card-description">
+                    Monitor Sysmon events with application filtering. Track process creation, network connections, file operations, and more.
+                </div>
+                <div class="card-footer">
+                    <div class="port-info">Port: 5001</div>
+                    <button class="open-btn">Open Monitor</button>
+                </div>
+            </div>
+            
+            <div class="card" onclick="openMonitor('http://localhost:5002')">
+                <div class="card-header">
+                    <div class="card-icon" style="background: linear-gradient(45deg, #4ecdc4, #44a08d);">🔐</div>
+                    <div class="card-title">Security Audit Monitor</div>
+                    <div class="status-indicator status-unknown" id="status-5002"></div>
+                </div>
+                <div class="card-description">
+                    Monitor Windows Security logs for authentication events including successful and failed logon attempts.
+                </div>
+                <div class="card-footer">
+                    <div class="port-info">Port: 5002</div>
+                    <button class="open-btn">Open Monitor</button>
+                </div>
+            </div>
+            
+            <div class="card" onclick="openMonitor('http://localhost:5003')">
+                <div class="card-header">
+                    <div class="card-icon" style="background: linear-gradient(45deg, #667eea, #764ba2);">🌐</div>
+                    <div class="card-title">DNS Traffic Monitor</div>
+                    <div class="status-indicator status-unknown" id="status-5003"></div>
+                </div>
+                <div class="card-description">
+                    Capture and analyze DNS queries and responses to monitor network communications and detect suspicious activity.
+                </div>
+                <div class="card-footer">
+                    <div class="port-info">Port: 5003</div>
+                    <button class="open-btn">Open Monitor</button>
+                </div>
+            </div>
+            
+            <div class="card" onclick="openMonitor('http://localhost:5004')">
+                <div class="card-header">
+                    <div class="card-icon" style="background: linear-gradient(45deg, #fa709a, #fee140);">📁</div>
+                    <div class="card-title">File System Monitor</div>
+                    <div class="status-indicator status-unknown" id="status-5004"></div>
+                </div>
+                <div class="card-description">
+                    Real-time monitoring of file system changes with ransomware detection and integrity monitoring capabilities.
+                </div>
+                <div class="card-footer">
+                    <div class="port-info">Port: 5004</div>
+                    <button class="open-btn">Open Monitor</button>
+                </div>
+            </div>
+            
+            <div class="card" onclick="openMonitor('http://localhost:5005')">
+                <div class="card-header">
+                    <div class="card-icon" style="background: linear-gradient(45deg, #a8edea, #fed6e3);">📡</div>
+                    <div class="card-title">Network Packet Sniffer</div>
+                    <div class="status-indicator status-unknown" id="status-5005"></div>
+                </div>
+                <div class="card-description">
+                    Capture and analyze network packets with security classification for secure vs insecure protocols.
+                </div>
+                <div class="card-footer">
+                    <div class="port-info">Port: 5005</div>
+                    <button class="open-btn">Open Monitor</button>
+                </div>
+            </div>
+            
+            <div class="card" onclick="openMonitor('http://localhost:5006')">
+                <div class="card-header">
+                    <div class="card-icon" style="background: linear-gradient(45deg, #ffecd2, #fcb69f);">📊</div>
+                    <div class="card-title">Sysmon Event Logs</div>
+                    <div class="status-indicator status-unknown" id="status-5006"></div>
+                </div>
+                <div class="card-description">
+                    Monitor specific Sysmon events including process creation, network connections, and DNS queries.
+                </div>
+                <div class="card-footer">
+                    <div class="port-info">Port: 5006</div>
+                    <button class="open-btn">Open Monitor</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="system-info">
+            <h3 style="margin-bottom: 20px; color: #333;">System Information</h3>
+            <div class="info-grid">
+                <div class="info-item">
+                    <div class="info-value" id="total-services">6</div>
+                    <div class="info-label">Total Services</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-value" id="active-services">0</div>
+                    <div class="info-label">Active Services</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-value" id="current-time">--:--:--</div>
+                    <div class="info-label">Current Time</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-value" id="uptime">--</div>
+                    <div class="info-label">Dashboard Uptime</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const ports = [5001, 5002, 5003, 5004, 5005, 5006];
+        const startTime = Date.now();
+        
+        function openMonitor(url) {
+            window.open(url, '_blank');
+        }
+        
+        async function checkServiceStatus(port) {
+            try {
+                const response = await fetch(`http://localhost:${port}/api/status`, {
+                    method: 'GET',
+                    mode: 'cors'
+                });
+                return response.ok;
+            } catch (error) {
+                return false;
+            }
+        }
+        
+        async function updateServiceStatuses() {
+            let activeCount = 0;
+            
+            for (const port of ports) {
+                const isOnline = await checkServiceStatus(port);
+                const indicator = document.getElementById(`status-${port}`);
+                
+                if (isOnline) {
+                    indicator.className = 'status-indicator status-online';
+                    activeCount++;
+                } else {
+                    indicator.className = 'status-indicator status-offline';
+                }
+            }
+            
+            document.getElementById('active-services').textContent = activeCount;
+        }
+        
+        function updateTime() {
+            const now = new Date();
+            document.getElementById('current-time').textContent = now.toLocaleTimeString();
+            
+            const uptime = Math.floor((Date.now() - startTime) / 1000);
+            const hours = Math.floor(uptime / 3600);
+            const minutes = Math.floor((uptime % 3600) / 60);
+            const seconds = uptime % 60;
+            document.getElementById('uptime').textContent = `${hours}h ${minutes}m ${seconds}s`;
+        }
+        
+        // Update statuses every 5 seconds
+        setInterval(updateServiceStatuses, 5000);
+        setInterval(updateTime, 1000);
+        
+        // Initial load
+        updateServiceStatuses();
+        updateTime();
+    </script>
+</body>
+</html>
